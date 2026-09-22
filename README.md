@@ -108,6 +108,42 @@ curl -sL https://raw.githubusercontent.com/MatinSenPai/FelFelChat/main/install.s
 
 ---
 
+## 🚄 استقرار روی Railway (رایگان)
+
+فل‌فل‌چت به‌صورت **یک سرویس** روی Railway اجرا می‌شود (Next.js + Socket.IO داخل `server.mjs`) و برای پایگاه داده از **MongoDB Atlas نسخه رایگان M0** استفاده می‌کند (Replica Set داخلی دارد که برای Prisma ضروری است).
+
+### ۱. ساخت پایگاه داده (MongoDB Atlas رایگان)
+
+1. در [mongodb.com/cloud/atlas/register](https://www.mongodb.com/cloud/atlas/register) حساب رایگان بسازید (بدون کارت بانکی).
+2. یک کلاستر **M0 Free** بسازید (تنظیمات پیش‌فرض کافی است).
+3. در **Database Access** یک کاربر دیتابیس بسازید (رمز عبور انتخاب کنید) با نقش **Read and write to any database**.
+4. در **Network Access** گزینه **Allow access from anywhere** (`0.0.0.0/0`) را اضافه کنید.
+5. از **Database → Connect → Drivers** رشته اتصال `mongodb+srv://` را کپی کنید و نام دیتابیس را به آن اضافه کنید:
+   ```
+   mongodb+srv://felfel:<password>@cluster0.xxxxx.mongodb.net/felfelchat?retryWrites=true&w=majority
+   ```
+
+### ۲. دیپلوی اپ روی Railway
+
+1. ریپازیتوری را روی GitHub داشته باشید، سپس در [railway.app](https://railway.app) پروژه جدید → **Deploy from GitHub repo** بسازید. فایل `railway.json` دستورات build و start را خودکار تنظیم می‌کند.
+2. در تب **Variables** متغیرهای زیر را اضافه کنید:
+
+   | متغیر | مقدار |
+   | --- | --- |
+   | `DATABASE_URL` | رشته اتصال Atlas با نام دیتابیس |
+   | `JWT_SECRET` | رشته تصادفی بلند (مثلاً خروجی `openssl rand -hex 32`) |
+   | `BACKUP_SIGNING_KEY` | رشته تصادفی بلند |
+   | `APP_ORIGIN` | آدرس عمومی با **https://** (بعد از ساخت دامنه در Railway) |
+
+   متغیر `PORT` را ست نکنید؛ Railway خودش تزریق می‌کند.
+3. بعد از اولین دیپلوی، در **Settings → Networking** یک دامنه (Generate Domain) بسازید.
+4. `APP_ORIGIN` را با همان دامنه (با https) ست کنید و دوباره دیپلوی بگیرید تا کوکی امن فعال شود.
+5. با سوپرادمین پیش‌فرض (**admin / admin123**) وارد شوید و **فوراً** رمز عبور را عوض کنید.
+
+> دستور استارت روی Railway ابتدا اسکیمای Prisma را با `db push` همگام می‌کند، سپس سوپرادمین را می‌سازد (seed) و بعد سرور را بالا می‌آورد.
+
+---
+
 ## 🛠️ راه‌اندازی دستی
 
 ### ۱. کلون پروژه
@@ -293,6 +329,68 @@ felfel superadmin
 </div>
 
 ---
+
+---
+
+## ☁️ Deploy to Railway (free, one-click-ish)
+
+FelFelChat runs as **one Railway service** (Next.js + Socket.IO in `server.mjs`) plus a **free MongoDB Atlas M0** database (replica set included, which Prisma requires).
+
+### 1. Create the MongoDB database (MongoDB Atlas, free M0)
+
+1. Go to [mongodb.com/cloud/atlas/register](https://www.mongodb.com/cloud/atlas/register) and create a free account (no credit card).
+2. Create an **M0 Free** cluster (default settings are fine).
+3. **Database Access** → *Add New Database User* → username + password (choose password auth), role **Read and write to any database**.
+4. **Network Access** → *Add IP Address* → **Allow access from anywhere** (`0.0.0.0/0`). Railway egress IPs are not fixed, so allow-all is required (M0 requires credentials anyway).
+5. **Database → Connect → Drivers** → copy the `mongodb+srv://` connection string, e.g.
+   ```
+   mongodb+srv://felfel:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   ```
+6. Append the database name to the path if it is missing: `...mongodb.net/felfelchat?retryWrites=true&w=majority`.
+
+### 2. Deploy the app on Railway
+
+1. Push this repository to GitHub (if it isn't already).
+2. Go to [railway.app](https://railway.app), **New Project** → **Deploy from GitHub repo** → pick this repo. The included `railway.json` configures the build & start commands, so no extra setup is needed.
+3. Open your service → **Variables** and add:
+
+   | Variable | Value |
+   | --- | --- |
+   | `DATABASE_URL` | Your Atlas `mongodb+srv://...` connection string (with `/felfelchat` database name) |
+   | `JWT_SECRET` | Long random string (e.g. `openssl rand -hex 32`) |
+   | `BACKUP_SIGNING_KEY` | Long random string |
+   | `APP_ORIGIN` | Your public URL, **https://** (e.g. `https://felfelchat.up.railway.app` — set it *after* Railway generates the domain) |
+   | `UPLOAD_MAX_SIZE_MB` | `20` (optional) |
+   | `NEXT_PUBLIC_WEBRTC_TURN_URLS` / `_USERNAME` / `_CREDENTIAL` | TURN credentials if you want reliable voice calls behind NAT (optional) |
+
+   Do **not** set `PORT` — Railway injects it, and the server binds `0.0.0.0:$PORT` automatically.
+4. First deploy: Railway builds (Next.js production build + `prisma generate`) and starts with `npm run start:railway`, which syncs the Prisma schema to MongoDB (`prisma db push`), seeds the superadmin, then boots the Socket.IO + Next.js server.
+5. **Settings → Networking → Generate Domain** (port is auto-detected from `$PORT`).
+6. Set `APP_ORIGIN` to that domain **with https://** and redeploy — the auth cookie's `secure` flag is derived from it.
+7. Open the deployed URL and log in with the seeded superadmin (**admin / admin123**) — then change the password immediately in `/profile` (or `/admin`).
+
+### 3. Notes
+
+- **Database** must be a replica set — that's why Atlas M0 is recommended. Prisma's MongoDB connector fails against a standalone `mongod`.
+- **Free tier sizing**: Railway's trial/Hobby plan and Atlas M0 are enough for small friend groups.
+- **Uploads are local-disk** (`./uploads`): files survive redeploys on Railway volumes only if you mount a volume and set `UPLOAD_DIR`/`BACKUP_DIR` to it (optional — keep it simple first).
+- **Scaling**: run a single instance; Socket.IO state (`onlineUsers`, `activeCall`) is in-memory.
+- **Turn off signup** in `/admin` → Settings once your friends have accounts.
+- Health endpoints for monitoring: `/api/health`, `/api/ready`.
+
+### 🚄 One-command Deploy (Railway CLI, optional)
+
+```bash
+npm i -g @railway/cli
+railway login
+railway init
+railway link
+railway variables --set "JWT_SECRET=$(openssl rand -hex 32)"
+railway variables --set "BACKUP_SIGNING_KEY=$(openssl rand -hex 32)"
+railway variables --set "DATABASE_URL=mongodb+srv://..."  # your Atlas string
+railway up
+railway domain
+```
 
 ---
 
