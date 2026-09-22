@@ -7,16 +7,24 @@
     "dev:next": "next dev",
     "build": "next build",
     "start": "NODE_ENV=production node server.mjs",
+    "start:railway": "npm run db:railway && npm run db:seed && NODE_ENV=production node server.mjs",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "db:migrate": "npx prisma db push",
-    "db:seed": "npx tsx prisma/seed.ts",
+    "db:railway": "prisma db push --accept-data-loss --skip-generate",
+    "db:seed": "tsx prisma/seed.ts",
     "db:studio": "npx prisma studio"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.21.0",
     "@sentry/node": "^8.55.0",
     "bcryptjs": "^3.0.3",
     "browser-image-compression": "^2.0.2",
@@ -38,9 +46,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "prisma": "^5.22.0",
     "tailwindcss": "^4",
-    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

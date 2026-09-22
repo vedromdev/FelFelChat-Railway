@@ -40,3 +40,12 @@
 - `/api/health` is `ok`.
 - `/api/ready` is `ready`.
 - Backup signature verification tested with one create+restore dry run.
+
+## Railway Deployment Notes
+- Config lives in `railway.json` (Nixpacks builder, `npm run build` for build, `npm run start:railway` for start, healthcheck `/api/health`).
+- `start:railway` runs `prisma db push --accept-data-loss --skip-generate` (schema sync) then the seed, then boots the server. Schema changes are applied on every deploy.
+- Required service variables: `DATABASE_URL` (MongoDB Atlas `mongodb+srv://`, replica set required), `JWT_SECRET`, `BACKUP_SIGNING_KEY`, `APP_ORIGIN` (public `https://` URL).
+- Do not set `PORT`; Railway injects it and the server binds `0.0.0.0:$PORT`.
+- Rotate secrets via Railway Variables (applied on next deploy) per the rotation policy above.
+- Uploaded files are local-disk; mount a Railway volume and point `UPLOAD_DIR`/`BACKUP_DIR` at it if persistence across redeploys is needed.
+- Run a single instance: Socket.IO presence and active-call state are in-memory.
