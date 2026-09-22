@@ -110,6 +110,8 @@ curl -sL https://raw.githubusercontent.com/MatinSenPai/FelFelChat/main/install.s
 
 ## 🚄 استقرار روی Railway (رایگان)
 
+> 📖 **راهنمای کامل مرحله‌به‌مرحله: [`docs/DEPLOY_RAILWAY.md`](docs/DEPLOY_RAILWAY.md)**
+
 فل‌فل‌چت به‌صورت **یک سرویس** روی Railway اجرا می‌شود (Next.js + Socket.IO داخل `server.mjs`) و برای پایگاه داده از **MongoDB Atlas نسخه رایگان M0** استفاده می‌کند (Replica Set داخلی دارد که برای Prisma ضروری است).
 
 ### ۱. ساخت پایگاه داده (MongoDB Atlas رایگان)
@@ -333,6 +335,8 @@ felfel superadmin
 ---
 
 ## ☁️ Deploy to Railway (free, one-click-ish)
+
+> 📖 **New to Railway? Follow the illustrated step-by-step guide: [`docs/DEPLOY_RAILWAY.md`](docs/DEPLOY_RAILWAY.md)** — it walks through every click, from creating the free database to logging in.
 
 FelFelChat runs as **one Railway service** (Next.js + Socket.IO in `server.mjs`) plus a **free MongoDB Atlas M0** database (replica set included, which Prisma requires).
 
